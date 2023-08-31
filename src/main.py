@@ -30,6 +30,7 @@ coords = np.array([xCoords[:,0], yCoords[:,0]]).T
 numNodes = len(xCoords)
 print(np.shape(coords))
 #np.savetxt('/home/doctajfox/Documents/Thesis_Research/AnisotropicDiffusion/data/coords.csv', coords, delimiter=",")
+#np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\coords.csv', coords, delimiter=",")
 #print('Done')
 #a = input('').split(" ")[0]
 
@@ -51,12 +52,9 @@ def main():
     mean = 0
     std = 20
     numNodes = rows*columns
-    print(rows)
-    print(columns)
-    noise = np.random.normal(mean, std, size=numNodes).reshape((rows, columns))
+    noise = np.round(np.abs(np.random.normal(mean, std, size=numNodes).reshape((rows, columns))))
     #a = input('').split(" ")[0]
     noisyImage = np.add(image,noise)
-
     
     method1 = paperDiscretization.paperDiscretization(noisyImage, coords)
     method1.solve()
