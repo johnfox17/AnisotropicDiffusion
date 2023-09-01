@@ -1,4 +1,4 @@
-
+import numpy as np
 
 
 class paperDiscretization:
@@ -22,12 +22,25 @@ class paperDiscretization:
 
     def calculateGradientOfPixel(self):
         pixelMasks = self.pixelMasks
-        print(pixelMasks)
+        gradients = []
+        for iIntensities in pixelMasks:
+            gradients.append([iIntensities[1]-iIntensities[0], iIntensities[2]-iIntensities[0], \
+                    iIntensities[3]-iIntensities[0], iIntensities[4]-iIntensities[0]])
+        self.gradients = gradients
 
-
+    def calcCoefficients(self):
+        gradients = self.gradients
+        K = 2 #TODO: Local contrast of edge
+        coefficients = []
+        for iGradients in gradients:
+            coefficients.append([np.exp(-((np.abs(iGradients[0])/K)**2)), np.exp(-((np.abs(iGradients[1])/K)**2)),\
+                    np.exp(-((np.abs(iGradients[2])/K)**2)), np.exp(-((np.abs(iGradients[3])/K)**2))])
+        self.coefficients = coefficients
+    
     def solve(self):
         self.extractPixelMasks() 
         self.calculateGradientOfPixel()
-
+        self.calcCoefficients()
+        
         #a = input('').split(" ")[0]
         print('What up?')
