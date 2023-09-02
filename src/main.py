@@ -58,6 +58,8 @@ def main():
     
     method1 = paperDiscretization.paperDiscretization(noisyImage, coords)
     method1.solve()
+    deNoisedImage = method1.deNoisedImage
+
 
     method2 = PDDODiscretization.PDDODiscretization()
     method2.solve()
@@ -66,7 +68,7 @@ def main():
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
     ax1.imshow(image, cmap='gray', vmin=0, vmax=255)
     ax1.set_title('Original Image')
-    ax2.imshow(noisyImage, cmap='gray', vmin=0, vmax=255)
+    ax2.imshow(deNoisedImage, cmap='gray', vmin=0, vmax=255)
     ax2.set_title('Noise Image')
     plt.show()
 
