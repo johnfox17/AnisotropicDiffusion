@@ -32,7 +32,7 @@ class paperDiscretization:
         gradients = self.gradients
         coefficients = []
         for iGradients in gradients:
-            K = np.linalg.norm(iGradients)
+            K = 0.8*np.linalg.norm(iGradients)
             coefficients.append([np.exp(-((np.abs(iGradients[0])/K)**2)), np.exp(-((np.abs(iGradients[1])/K)**2)),\
                     np.exp(-((np.abs(iGradients[2])/K)**2)), np.exp(-((np.abs(iGradients[3])/K)**2))])
         self.coefficients = coefficients
