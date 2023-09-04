@@ -60,7 +60,7 @@ def main():
     #deNoisedImage = method1.deNoisedImage
 
 
-    method2 = PDDODiscretization.PDDODiscretization(numNodes, coords, dx,dy, dt, deltaX, deltaY, horizon)
+    method2 = PDDODiscretization.PDDODiscretization(noisyImage, numNodes, coords, dx,dy, dt, deltaX, deltaY, horizon)
     method2.solve()
 
     # display the array of pixels as an image
