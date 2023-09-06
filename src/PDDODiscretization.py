@@ -15,8 +15,10 @@ class PDDODiscretization:
         self.horizon = horizon
         self.deltaX = deltaX
         self.deltaY = deltaY
-        self.bVec10 = np.array([0,1,0])
-        self.bVec01 = np.array([0,0,1])
+        self.bVec10 = np.array([0,1,0,0,0,0])
+        self.bVec01 = np.array([0,0,1,0,0,0])
+        self.bVec20 = np.array([0,0,0,2,0,0])
+        self.bVec02 = np.array([0,0,0,0,2,0])
         self.diffOrder = 1
 
     def findFamilyMembers(self):
@@ -46,39 +48,56 @@ class PDDODiscretization:
         self.xXis = xXis
         self.yXis = yXis
 
-    def calcGradients(self, family, xXi, yXi):
+    def calcDerivatives(self, family, xXi, yXi):
         noisyImage = self.noisyImage
         dx = self.dx
         dy = self.dy
         bVec10 = self.bVec10
         bVec01 = self.bVec01
+        bVec20 = self.bVec20
+        bVec02 = self.bVec02
         deltaX = self.deltaX
         deltaY = self.deltaY
         deltaMag = np.sqrt(deltaX**2 + deltaY**2)
-        diffMat = np.zeros([3,3])
+        diffMat = np.zeros([6,6])
         g10 = []
         g01 = []
-        for iFamilyMember in range(len(family)):
-            currentFamilyMember = family[iFamilyMember]
-            currentXXi = xXi[iFamilyMember]
-            currentYXi = yXi[iFamilyMember]
-            xiMag = np.sqrt(currentXXi**2+currentYXi**2) 
-            pList = np.array([1,currentXXi/deltaMag, currentYXi/deltaMag])
-            weight = np.exp(-4*(xiMag/deltaMag)**2)
-            diffMat += weight*np.outer(pList,pList)*dx*dy
-            
+        g20 = []
+        g02 = []
         for iFamilyMember in range(len(family)):
             currentFamilyMember = family[iFamilyMember]
             currentXXi = xXi[iFamilyMember]
             currentYXi = yXi[iFamilyMember]
             xiMag = np.sqrt(currentXXi**2+currentYXi**2)
-            pList = np.array([1,currentXXi/deltaMag, currentYXi/deltaMag])
+            pList = np.array([1,currentXXi/deltaMag, currentYXi/deltaMag,\
+                    (currentXXi/deltaMag)**2, (currentYXi/deltaMag)**2,\
+                    (currentXXi/deltaMag)*(currentYXi/deltaMag)])
+            weight = np.exp(-4*(xiMag/deltaMag)**2)
+            diffMat += weight*np.outer(pList,pList)*dx*dy
+
+        for iFamilyMember in range(len(family)):
+            currentFamilyMember = family[iFamilyMember]
+            currentXXi = xXi[iFamilyMember]
+            currentYXi = yXi[iFamilyMember]
+            xiMag = np.sqrt(currentXXi**2+currentYXi**2)
+            pList = np.array([1,currentXXi/deltaMag, currentYXi/deltaMag,\
+                    (currentXXi/deltaMag)**2, (currentYXi/deltaMag)**2,\
+                    (currentXXi/deltaMag)*(currentYXi/deltaMag)])
             weight = np.exp(-4*(xiMag/deltaMag)**2)
             g10.append(weight*(np.inner(solve(diffMat,bVec10), pList)))
             g01.append(weight*(np.inner(solve(diffMat,bVec01), pList)))
-        gradientX = np.inner(np.array(g10), noisyImage[family])
-        gradientY = np.inner(np.array(g01), noisyImage[family])
-        return gradientX, gradientY
+            g20.append(weight*(np.inner(solve(diffMat,bVec20), pList)))
+            g02.append(weight*(np.inner(solve(diffMat,bVec02), pList)))
+        
+        gradientX = np.inner(np.array(g10)/np.linalg.norm(np.array(g10)), noisyImage[family])
+        gradientY = np.inner(np.array(g01)/np.linalg.norm(np.array(g01)), noisyImage[family])
+        laplacian = np.inner((np.array(g20) + np.array(g02))/np.linalg.norm(np.array(g20) + np.array(g02)), noisyImage[family])
+        return gradientX, gradientY, laplacian
+
+    
+    def calcCoefficients(self, gradientX, gradientY):
+        K = 0.8*np.linalg.norm([gradientX, gradientY])
+        return np.exp(-((np.abs(gradientX)/K)**2)), np.exp(-((np.abs(gradientY)/K)**2))
 
     def timeIntegrate(self):
         numNodes = self.numNodes
@@ -89,13 +108,31 @@ class PDDODiscretization:
         columns = self.rows
         gradMatX = np.zeros([rows*columns,1]) 
         gradMatY = np.zeros([rows*columns,1])
-        for iNode in range(numNodes):
-            family = familyMembers[iNode]
-            xXi = xXis[iNode]
-            yXi = yXis[iNode]
-            gradMatX[iNode], gradMatY[iNode] = self.calcGradients(family, xXi, yXi)
-        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\gradMatX.csv', gradMatX.reshape((300, 300)), delimiter=",")
-        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\gradMatY.csv', gradMatY.reshape((300, 300)), delimiter=",")
+        noisyImage = self.noisyImage
+        lambd = 0.1
+        Laplacian = np.zeros([rows*columns,1])
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\OGImage.csv', noisyImage.reshape((300, 300)), delimiter=",")
+        for i in range(10):
+            print(i)
+            #deNoisedImage = np.zeros([rows*columns,1])
+            for iNode in range(numNodes):
+                family = familyMembers[iNode]
+                xXi = xXis[iNode]
+                yXi = yXis[iNode]
+                gradMatX[iNode], gradMatY[iNode], Laplacian[iNode] = self.calcDerivatives(family, xXi, yXi)
+                
+                #gradientX, gradientY = self.calcGradients(family, xXi, yXi)
+                #laplacian = self.calcLaplacian(family, xXi, yXi)
+                #coeffX, coeffY = self.calcCoefficients(gradientX, gradientY)
+                
+                #deNoisedImage[iNode] = noisyImage[iNode] + lambd*(coeffX*gradientX + coeffY*gradientY)
+                noisyImage[iNode] = noisyImage[iNode] + lambd*(Laplacian[iNode])
+            #self.noisyImage = noisyImage
+            #a = input('').split(" ")[0]
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\gradMatX1.csv', gradMatX.reshape((300, 300)), delimiter=",")
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\gradMatY1.csv', gradMatY.reshape((300, 300)), delimiter=",")
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\laplacian1.csv', Laplacian.reshape((300, 300)), delimiter=",")
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoised1.csv', noisyImage.reshape((300, 300)), delimiter=",")
         print('Here')
     def solve(self):
         self.findFamilyMembers()
