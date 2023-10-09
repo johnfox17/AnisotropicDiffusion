@@ -52,20 +52,19 @@ class paperDiscretization:
                 noisyImage[iRow, iCol] += lambd*(coeffs[0]*grads[0]+\
                         coeffs[1]*grads[1]+coeffs[2]*grads[2]+coeffs[3]*grads[3])
                 iPixel += 1
-        self.noisyImage = noisyImage
+        self.denoisedImage = noisyImage
 
 
 
     def solve(self):
         
-        for i in range(45):
+        for i in range(10):
             self.extractPixelMasks() 
             self.calculateGradientOfPixel()
             self.calcCoefficients()
             self.timeIntegrate()
+        
 
-        self.deNoisedImage = np.round(np.abs(self.noisyImage))
-
-
+        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoisedImagePaper.csv', self.denoisedImage, delimiter=",")
         #a = input('').split(" ")[0]
-        print('What up?')
+        print('Done Paper method')
