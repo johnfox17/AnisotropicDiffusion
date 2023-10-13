@@ -36,16 +36,11 @@ numNodes = len(xCoords)
 #np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\coords.csv', coords, delimiter=",")
 #print('Done')
 #a = input('').split(" ")[0]
-
-
-def main():
-    
+def createNoisyImage():
     if sys.platform.startswith('linux'):
-        pathToLena = \
-            '/home/doctajfox/Documents/Thesis_Research/AnisotropicDiffusion/data/testImage.jpg'
+        pathToImage = '/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/testImage.jpg'
     else:
-        pathToLena = 'C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\testImage.jpg'
-
+        pathToImage = 'C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\testImage.jpg'
     # load image as pixel array
     image = cv2.imread(pathToLena)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -56,14 +51,28 @@ def main():
     std = 20
     numNodes = rows*columns
     noise = np.round(np.abs(np.random.normal(mean, std, size=numNodes).reshape((rows, columns))))
-    #a = input('').split(" ")[0]
     noisyImage = np.add(image,noise)
-    np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\noisyImage.csv', noisyImage, delimiter=",") 
+    return noisyImage 
+
+def main():
+    
+    createImageWithNoise = False
+    if createImageWithNoise:
+        noisyImage = createNoisyImage()
+        if sys.platform.startswith('linux'):
+            np.savetxt('/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/noisyImage.csv', noisyImage, delimiter=",")
+        else:
+            np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\noisyImage.csv', noisyImage, delimiter=",")
+    else:
+        if sys.platform.startswith('linux'):
+            noisyImage = np.loadtxt("/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/noisyImage.csv", delimiter=",")
+        else:
+            noisyImage = np.loadtxt("C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\noisyImage.csv", delimiter=",")
+    
     method1 = paperDiscretization.paperDiscretization(noisyImage, coords)
     method1.solve()
 
-    method2 = PDDODiscretization.PDDODiscretization(noisyImage, numNodes, coords, dx,dy, dt, deltaX, deltaY, deltaX2, deltaY2,\
-            horizon2)
+    method2 = PDDODiscretization.PDDODiscretization(noisyImage, numNodes, coords, dx,dy, dt, deltaX, deltaY, deltaX2, deltaY2, horizon2)
     method2.solve()
     print('Done')
     #a = input('').split(" ")[0]

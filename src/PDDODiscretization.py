@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.neighbors import KDTree
 from numpy.linalg import solve
 import math
-
+import sys
 class PDDODiscretization:
     def __init__(self, noisyImage, numNodes, coords, dx, dy, dt, \
             deltaX, deltaY, deltaX2, deltaY2, horizon):
@@ -148,6 +148,18 @@ class PDDODiscretization:
         gradCoeffsY = np.inner(g01, np.transpose(coeffs[family]))
         return gradCoeffsX, gradCoeffsY
 
+    def periodicBC(self):
+        noisyImage = self.noisyImage
+        rows = self.rows
+        columns = self.columns
+        extendRows = 6
+        extendColumns = 6
+        extendedImage = np.zeros([rows + extendRows, columns + extendColumns])
+        extendedImage[3:303,3:303] = noisyImage.reshape((rows,columns))
+        np.savetxt('/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/test.csv', extendedImage, delimiter=",")
+        print('Here')
+        a = input('').split(" ")[0]
+
     def timeIntegrate(self):
         numNodes = self.numNodes
         familyMembers = self.familyMembers
@@ -166,6 +178,7 @@ class PDDODiscretization:
         Laplacian = np.zeros([rows*columns,1])
 
         for i in range(2):
+            self.periodicBC()
             for iNode in range(numNodes):
                 family = familyMembers[iNode]
                 xXi = xXis[iNode]
@@ -179,8 +192,6 @@ class PDDODiscretization:
                 gradCoeffsX[iNode], gradCoeffsY[iNode] = self.calcGradOfCoeffs(family, xXi, yXi, coeffs)
             for iNode in range(numNodes):
                 family = familyMembers2[iNode]
-                #noisyImage[iNode] = noisyImage[iNode] + lambd*(np.inner(gradCoeffsX[family].flatten(),\
-                #        gradMatX[family].flatten()) + np.inner(gradCoeffsY[family].flatten(),gradMatY[family].flatten()))
                 noisyImage[iNode] = noisyImage[iNode] + lambd*(np.inner(coeffs[family].flatten(),\
                     gradMatX[family].flatten()) + np.inner(coeffs[family].flatten(),gradMatY[family].flatten()))
             
@@ -191,7 +202,10 @@ class PDDODiscretization:
         self.calcXis()
         self.timeIntegrate()
         deNoisedImage = self.noisyImage
-        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoisedImagePDDO.csv', deNoisedImage.reshape((300, 300)), delimiter=",")
+        if sys.platform.startswith('linux'):
+            np.savetxt('/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/deNoisedImagePDDO.csv', deNoisedImage.reshape((300, 300)), delimiter=",")
+        else:
+            np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoisedImagePDDO.csv', deNoisedImage.reshape((300, 300)), delimiter=",")
         print('Done PDDO')
         #a = input('').split(" ")[0]
 

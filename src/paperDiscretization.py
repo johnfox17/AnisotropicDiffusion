@@ -1,5 +1,5 @@
 import numpy as np
-
+import sys
 
 class paperDiscretization:
     def __init__(self, noisyImage, coords):
@@ -65,6 +65,9 @@ class paperDiscretization:
             self.timeIntegrate()
         
 
-        np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoisedImagePaper.csv', self.denoisedImage, delimiter=",")
+        if sys.platform.startswith('linux'):
+            np.savetxt('/home/doctajfox/Documents/Thesis/AnisotropicDiffusion/data/deNoisedImagePaper.csv', self.denoisedImage, delimiter=",")
+        else:
+            np.savetxt('C:\\Users\\docta\\Documents\\Thesis\\AnisotropicDiffusion\\data\\deNoisedImagePaper.csv', self.denoisedImage, delimiter=",")
         #a = input('').split(" ")[0]
         print('Done Paper method')
